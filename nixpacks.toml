@@ -1,0 +1,8 @@
+[phases.setup]
+nixPkgs = ["maven", "jdk21"]
+
+[phases.build]
+cmds = ["cd backend && mvn package"]
+
+[start]
+cmd = "java -jar backend/target/recipe_hub.jar"
