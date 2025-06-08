@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recipe Detail - RecipeHub</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/notifications.css">
+    <link rel="stylesheet" href="css/loading.css">
+    <link rel="stylesheet" href="css/collaboration.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.0/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">RecipeHub</div>
+        <div class="nav-links">
+            <a href="dashboard.html">Dashboard</a>
+            <a href="#" id="logoutBtn">Logout</a>
+        </div>
+    </nav>
+
+    <main class="container">
+        <div class="recipe-header">
+            <h1 id="recipeTitle">Loading...</h1>
+            <div class="recipe-meta">
+                <span id="cookingTime">Cooking Time: --</span>
+                <span id="servings">Servings: --</span>
+                <div class="collaboration-status">
+                    <div class="status-indicator status-disconnected"></div>
+                    <span>Offline</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="recipe-content">
+            <div class="recipe-main">
+                <section class="recipe-section">
+                    <h2>Description</h2>
+                    <p id="recipeDescription">Loading...</p>
+                </section>
+
+                <section class="recipe-section">
+                    <h2>Ingredients</h2>
+                    <div class="servings-control">
+                        <label for="servingsMultiplier">Scale Recipe:</label>
+                        <input type="number" id="servingsMultiplier" min="0.1" step="0.1" value="1">
+                        <button id="resetServings">Reset</button>
+                    </div>
+                    <ul id="ingredientsList" class="ingredients-list">
+                        <!-- Ingredients will be populated here -->
+                    </ul>
+                </section>
+
+                <section class="recipe-section">
+                    <h2>Instructions</h2>
+                    <ol id="instructionsList" class="instructions-list">
+                        <!-- Instructions will be populated here -->
+                    </ol>
+                </section>
+
+                <section class="recipe-section">
+                    <h2>Tags</h2>
+                    <div id="tagsList" class="tags-list">
+                        <!-- Tags will be populated here -->
+                    </div>
+                </section>
+            </div>
+
+            <div class="recipe-sidebar">
+                <section class="collaborators-section">
+                    <div class="collaborators-header">
+                        <h3 class="collaborators-title">Collaborators</h3>
+                        <button id="addCollaboratorBtn" class="btn btn-primary">Add Collaborator</button>
+                    </div>
+                    <div id="collaboratorsList" class="collaborators-list">
+                        <!-- Collaborators will be populated here -->
+                    </div>
+                </section>
+
+                <section class="cooking-timers">
+                    <h3>Cooking Timers</h3>
+                    <div id="timersList">
+                        <!-- Timers will be populated here -->
+                    </div>
+                    <button id="addTimerBtn" class="btn btn-secondary">Add Timer</button>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <!-- Add Collaborator Modal -->
+    <div id="addCollaboratorModal" class="modal">
+        <div class="modal-content">
+            <h2>Add Collaborator</h2>
+            <form id="addCollaboratorForm">
+                <div class="form-group">
+                    <label for="collaboratorEmail">Email Address</label>
+                    <input type="email" id="collaboratorEmail" required>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('addCollaboratorModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Timer Modal -->
+    <div id="addTimerModal" class="modal">
+        <div class="modal-content">
+            <h2>Add Cooking Timer</h2>
+            <form id="addTimerForm">
+                <div class="form-group">
+                    <label for="timerName">Timer Name</label>
+                    <input type="text" id="timerName" required>
+                </div>
+                <div class="form-group">
+                    <label for="timerDuration">Duration (minutes)</label>
+                    <input type="number" id="timerDuration" min="1" required>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('addTimerModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Start Timer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div id="loadingSpinner" class="loading-spinner"></div>
+
+    <!-- Notification Container -->
+    <div id="notificationContainer" class="notification-container"></div>
+
+    <script type="module">
+        import websocketManager from './js/utils/websocket.js';
+        import { showNotification } from './js/utils/notifications.js';
+        import { showSpinner, hideSpinner } from './js/utils/loading.js';
+        import { MeasurementConverter } from './js/utils/measurements.js';
+
+        // Initialize measurement converter
+        const measurementConverter = new MeasurementConverter();
+
+        // Get recipe ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const recipeId = urlParams.get('id');
+
+        if (!recipeId) {
+            showNotification('error', 'No recipe ID provided');
+            window.location.href = 'dashboard.html';
+        }
+
+        // Load recipe data
+        async function loadRecipe() {
+            showSpinner();
+            try {
+                const response = await fetch(`/api/recipes/${recipeId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load recipe');
+                }
+
+                const recipe = await response.json();
+                displayRecipe(recipe);
+
+                // Connect to WebSocket for collaboration
+                const token = localStorage.getItem('token');
+                websocketManager.connect(token);
+
+                // Join recipe collaboration
+                const userId = localStorage.getItem('userId');
+                const userName = localStorage.getItem('userName');
+                websocketManager.joinRecipe(recipeId, userId, userName);
+
+                // Set up collaboration event handlers
+                websocketManager.onRecipeChange(recipeId, handleRecipeChange);
+                websocketManager.onUserSync(recipeId, handleRecipeSync);
+
+            } catch (error) {
+                showNotification('error', error.message);
+            } finally {
+                hideSpinner();
+            }
+        }
+
+        // Display recipe data
+        function displayRecipe(recipe) {
+            document.getElementById('recipeTitle').textContent = recipe.title;
+            document.getElementById('recipeDescription').textContent = recipe.description;
+            document.getElementById('cookingTime').textContent = `Cooking Time: ${recipe.cookingTime} minutes`;
+            document.getElementById('servings').textContent = `Servings: ${recipe.servings}`;
+
+            // Display ingredients
+            const ingredientsList = document.getElementById('ingredientsList');
+            ingredientsList.innerHTML = recipe.ingredients.map(ingredient => 
+                `<li class="ingredient-item">${ingredient}</li>`
+            ).join('');
+
+            // Display instructions
+            const instructionsList = document.getElementById('instructionsList');
+            instructionsList.innerHTML = recipe.instructions.map(instruction =>
+                `<li class="instruction-item">${instruction}</li>`
+            ).join('');
+
+            // Display tags
+            const tagsList = document.getElementById('tagsList');
+            tagsList.innerHTML = recipe.tags.map(tag =>
+                `<span class="tag">${tag}</span>`
+            ).join('');
+
+            // Display collaborators
+            updateCollaboratorsList(recipe.collaborators);
+        }
+
+        // Handle recipe changes from collaborators
+        function handleRecipeChange(message) {
+            switch (message.type) {
+                case 'JOIN':
+                    showNotification('info', `${message.userName} joined the recipe`);
+                    break;
+                case 'LEAVE':
+                    showNotification('info', `${message.userName} left the recipe`);
+                    break;
+                case 'CHANGE':
+                    // Update recipe display with changes
+                    const recipe = message.content.recipe;
+                    displayRecipe(recipe);
+                    showNotification('info', `${message.userName} made changes to the recipe`);
+                    break;
+            }
+        }
+
+        // Handle recipe sync
+        function handleRecipeSync(message) {
+            const recipe = message.content.recipe;
+            displayRecipe(recipe);
+            showNotification('info', 'Recipe synchronized');
+        }
+
+        // Update collaborators list
+        function updateCollaboratorsList(collaborators) {
+            const collaboratorsList = document.getElementById('collaboratorsList');
+            const currentUserId = localStorage.getItem('userId');
+
+            collaboratorsList.innerHTML = collaborators.map(collaborator => `
+                <div class="collaborator-item">
+                    <img src="${collaborator.avatar || 'images/default-avatar.png'}" 
+                         alt="${collaborator.name}" 
+                         class="collaborator-avatar">
+                    <span class="collaborator-name">${collaborator.name}</span>
+                    ${collaborator.id === currentUserId ? 
+                        '<span class="collaborator-you">(You)</span>' : ''}
+                </div>
+            `).join('');
+        }
+
+        // Handle servings scaling
+        document.getElementById('servingsMultiplier').addEventListener('change', function(e) {
+            const multiplier = parseFloat(e.target.value);
+            if (isNaN(multiplier) || multiplier <= 0) {
+                showNotification('error', 'Please enter a valid number');
+                return;
+            }
+
+            const ingredientsList = document.getElementById('ingredientsList');
+            const originalIngredients = Array.from(ingredientsList.children).map(li => li.textContent);
+
+            ingredientsList.innerHTML = originalIngredients.map(ingredient => {
+                const scaledIngredient = measurementConverter.scaleIngredient(ingredient, multiplier);
+                return `<li class="ingredient-item">${scaledIngredient}</li>`;
+            }).join('');
+        });
+
+        // Reset servings
+        document.getElementById('resetServings').addEventListener('click', function() {
+            document.getElementById('servingsMultiplier').value = 1;
+            loadRecipe(); // Reload original recipe
+        });
+
+        // Add collaborator
+        document.getElementById('addCollaboratorForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const email = document.getElementById('collaboratorEmail').value;
+
+            try {
+                const response = await fetch(`/api/recipes/${recipeId}/collaborators`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify({ email })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to add collaborator');
+                }
+
+                showNotification('success', 'Collaborator added successfully');
+                closeModal('addCollaboratorModal');
+                loadRecipe(); // Reload recipe to update collaborators list
+            } catch (error) {
+                showNotification('error', error.message);
+            }
+        });
+
+        // Add timer
+        document.getElementById('addTimerForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const name = document.getElementById('timerName').value;
+            const duration = parseInt(document.getElementById('timerDuration').value);
+
+            const timer = {
+                id: Date.now(),
+                name,
+                duration,
+                remaining: duration * 60, // Convert to seconds
+                active: true
+            };
+
+            addTimer(timer);
+            closeModal('addTimerModal');
+        });
+
+        // Timer functions
+        function addTimer(timer) {
+            const timersList = document.getElementById('timersList');
+            const timerElement = document.createElement('div');
+            timerElement.className = 'timer-item';
+            timerElement.innerHTML = `
+                <div class="timer-header">
+                    <h4>${timer.name}</h4>
+                    <button class="btn btn-danger" onclick="removeTimer(${timer.id})">Remove</button>
+                </div>
+                <div class="timer-display">
+                    <span class="timer-time">${formatTime(timer.remaining)}</span>
+                </div>
+            `;
+
+            timersList.appendChild(timerElement);
+
+            // Start timer
+            const interval = setInterval(() => {
+                if (timer.remaining > 0) {
+                    timer.remaining--;
+                    timerElement.querySelector('.timer-time').textContent = formatTime(timer.remaining);
+                } else {
+                    clearInterval(interval);
+                    showNotification('success', `${timer.name} timer completed!`);
+                    timerElement.remove();
+                }
+            }, 1000);
+        }
+
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+        }
+
+        function removeTimer(timerId) {
+            const timerElement = document.querySelector(`[data-timer-id="${timerId}"]`);
+            if (timerElement) {
+                timerElement.remove();
+            }
+        }
+
+        // Modal functions
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        // Initialize
+        loadRecipe();
+    </script>
+</body>
+</html> 

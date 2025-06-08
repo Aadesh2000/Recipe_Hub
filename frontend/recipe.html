@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recipe Details - RecipeHub</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/recipe.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <a href="index.html">RecipeHub</a>
+        </div>
+        <div class="nav-links">
+            <a href="dashboard.html">Dashboard</a>
+            <a href="#" id="logoutBtn">Logout</a>
+        </div>
+    </nav>
+
+    <main class="container">
+        <div class="recipe-header">
+            <div class="recipe-title-section">
+                <h1 id="recipeTitle">Loading...</h1>
+                <div class="recipe-meta">
+                    <span id="prepTime">Prep: -- min</span>
+                    <span id="cookTime">Cook: -- min</span>
+                    <span id="servings">Servings: --</span>
+                </div>
+            </div>
+            <div class="recipe-actions">
+                <button id="editBtn" class="btn-primary">
+                    <i class="fas fa-edit"></i> Edit
+                </button>
+                <button id="scaleBtn" class="btn-secondary">
+                    <i class="fas fa-balance-scale"></i> Scale
+                </button>
+                <button id="shareBtn" class="btn-secondary">
+                    <i class="fas fa-share-alt"></i> Share
+                </button>
+            </div>
+        </div>
+
+        <div class="recipe-content">
+            <div class="recipe-description">
+                <p id="recipeDescription">Loading...</p>
+            </div>
+
+            <div class="recipe-details">
+                <div class="ingredients-section">
+                    <h2>Ingredients</h2>
+                    <div id="ingredientsList" class="ingredients-list">
+                        <!-- Ingredients will be populated here -->
+                    </div>
+                </div>
+
+                <div class="instructions-section">
+                    <h2>Instructions</h2>
+                    <div id="instructionsList" class="instructions-list">
+                        <!-- Instructions will be populated here -->
+                    </div>
+                </div>
+
+                <div class="timers-section">
+                    <h2>Cooking Timers</h2>
+                    <div id="timersList" class="timers-list">
+                        <!-- Active timers will be shown here -->
+                    </div>
+                    <button id="addTimerBtn" class="btn-secondary">
+                        <i class="fas fa-plus"></i> Add Timer
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Edit Recipe Modal -->
+    <div id="editRecipeModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Edit Recipe</h2>
+            <form id="editRecipeForm">
+                <div class="form-group">
+                    <label for="editTitle">Title</label>
+                    <input type="text" id="editTitle" name="title" required>
+                </div>
+                <div class="form-group">
+                    <label for="editDescription">Description</label>
+                    <textarea id="editDescription" name="description" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="editIngredients">Ingredients (one per line)</label>
+                    <textarea id="editIngredients" name="ingredients" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="editInstructions">Instructions (one per line)</label>
+                    <textarea id="editInstructions" name="instructions" required></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editPrepTime">Prep Time (minutes)</label>
+                        <input type="number" id="editPrepTime" name="prepTime" required min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="editCookTime">Cook Time (minutes)</label>
+                        <input type="number" id="editCookTime" name="cookTime" required min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="editServings">Servings</label>
+                        <input type="number" id="editServings" name="servings" required min="1">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="editTags">Tags (comma-separated)</label>
+                    <input type="text" id="editTags" name="tags">
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="editIsPublic" name="isPublic">
+                        Make this recipe public
+                    </label>
+                </div>
+                <button type="submit" class="btn-primary">Save Changes</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Timer Modal -->
+    <div id="addTimerModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Add Cooking Timer</h2>
+            <form id="addTimerForm">
+                <div class="form-group">
+                    <label for="timerName">Timer Name</label>
+                    <input type="text" id="timerName" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label for="timerDuration">Duration (minutes)</label>
+                    <input type="number" id="timerDuration" name="duration" required min="1">
+                </div>
+                <button type="submit" class="btn-primary">Start Timer</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scale Recipe Modal -->
+    <div id="scaleRecipeModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Scale Recipe</h2>
+            <form id="scaleRecipeForm">
+                <div class="form-group">
+                    <label for="scaleFactor">Scale Factor</label>
+                    <input type="number" id="scaleFactor" name="scaleFactor" required min="0.1" step="0.1" value="1">
+                </div>
+                <button type="submit" class="btn-primary">Apply Scaling</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Share Recipe Modal -->
+    <div id="shareRecipeModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Share Recipe</h2>
+            <div class="share-options">
+                <div class="form-group">
+                    <label for="shareEmail">Share with (email)</label>
+                    <input type="email" id="shareEmail" name="email" required>
+                </div>
+                <button id="shareWithUserBtn" class="btn-primary">Share</button>
+                <div class="share-link-section">
+                    <p>Or share this link:</p>
+                    <div class="share-link-container">
+                        <input type="text" id="shareLink" readonly>
+                        <button id="copyLinkBtn" class="btn-secondary">Copy</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/recipe.js"></script>
+</body>
+</html> 

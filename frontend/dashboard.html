@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - RecipeHub</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">RecipeHub</div>
+        <div class="nav-links">
+            <a href="index.html">Home</a>
+            <a href="dashboard.html" class="active">Dashboard</a>
+            <a href="#" id="createRecipeBtn">Create Recipe</a>
+            <a href="#" id="logoutBtn">Logout</a>
+        </div>
+    </nav>
+
+    <main class="container">
+        <div class="dashboard-header">
+            <h1>My Recipes</h1>
+            <div class="dashboard-actions">
+                <input type="text" id="searchInput" placeholder="Search recipes...">
+                <select id="filterSelect">
+                    <option value="all">All Recipes</option>
+                    <option value="owned">My Recipes</option>
+                    <option value="shared">Shared with Me</option>
+                    <option value="public">Public Recipes</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="recipe-grid" id="recipeGrid">
+            <!-- Recipe cards will be dynamically inserted here -->
+        </div>
+
+        <!-- Create Recipe Modal -->
+        <div id="createRecipeModal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2>Create New Recipe</h2>
+                <form id="createRecipeForm">
+                    <div class="form-group">
+                        <label for="recipeTitle">Title</label>
+                        <input type="text" id="recipeTitle" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="recipeDescription">Description</label>
+                        <textarea id="recipeDescription" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="recipeServings">Servings</label>
+                        <input type="number" id="recipeServings" min="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="recipeTags">Tags (comma-separated)</label>
+                        <input type="text" id="recipeTags" placeholder="e.g., Vegan, Quick, Dinner">
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="recipePublic">
+                            Make this recipe public
+                        </label>
+                    </div>
+                    <button type="submit" class="btn-primary">Create Recipe</button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 RecipeHub. All rights reserved.</p>
+    </footer>
+
+    <script src="js/auth.js"></script>
+    <script src="js/recipe.js"></script>
+    <script src="js/dashboard.js"></script>
+</body>
+</html> 

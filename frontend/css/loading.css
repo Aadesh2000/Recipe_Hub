@@ -1,0 +1,127 @@
+/* Global Loading Container */
+.loading-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.loading-container.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Global Loading Spinner */
+.loading-spinner {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    text-align: center;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+}
+
+.spinner-message {
+    color: #2c3e50;
+    font-size: 1rem;
+}
+
+/* Element Loading Spinner */
+.element-loading-spinner {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.8);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 1;
+}
+
+.element-loading-spinner .spinner {
+    width: 30px;
+    height: 30px;
+    margin-bottom: 0.5rem;
+}
+
+.element-loading-spinner .spinner-message {
+    font-size: 0.9rem;
+}
+
+/* Button Loading State */
+.button-spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid #ffffff;
+    border-top: 2px solid transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
+button.loading {
+    cursor: not-allowed;
+    opacity: 0.8;
+}
+
+/* Loading Animation */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Loading States for Common Elements */
+.loading {
+    position: relative;
+    pointer-events: none;
+}
+
+.loading::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.8);
+    z-index: 1;
+}
+
+/* Responsive Design */
+@media (max-width: 480px) {
+    .loading-spinner {
+        padding: 1.5rem;
+    }
+
+    .spinner {
+        width: 30px;
+        height: 30px;
+    }
+
+    .spinner-message {
+        font-size: 0.9rem;
+    }
+} 
