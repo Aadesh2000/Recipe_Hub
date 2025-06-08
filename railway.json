@@ -2,6 +2,6 @@
   "build": {
     "builder": "nixpacks",
     "buildCommand": "cd backend && mvn package",
-    "startCommand": "java -jar backend/target/your-app-name.jar"
+    "startCommand": "java -jar backend/target/recipe_hub.jar"
   }
 }
